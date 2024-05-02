@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Application</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f8f8;
+        padding: 20px;
+      }
+      #container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      input,
+      button,
+      textarea {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #chat-container {
+        max-height: 300px; /* Set a max height for the chat container */
+        overflow-y: auto; /* Enable vertical scrolling */
+        border: 1px solid #ccc; /* Add a border */
+        padding: 10px; /* Padding inside the container */
+        background-color: #f0f0f0; /* Background color for the container */
+        border-radius: 5px; /* Rounded corners */
+        margin-bottom: 10px; /* Space between the container and input area */
+      }
+      .message {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+      }
+      .user-message {
+        background-color: #d1ecf1;
+        text-align: right;
+      }
+      .bot-message {
+        background-color: #f8d7da;
+        text-align: left;
+      }
+      #pingMessage {
+        color: green;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>Chatbot Application</h1>
+
+      <input
+        type="text"
+        id="serverAddress"
+        placeholder="Server Address (default: http://localhost:5000)"
+      />
+      <button id="pingServerBtn">Ping Server</button>
+      <p id="pingMessage"></p>
+
+      <div id="chat-container"></div>
+
+      <textarea
+        id="userInput"
+        rows="3"
+        placeholder="Type your message here..."
+      ></textarea>
+      <button id="sendBtn">Send</button>
+    </div>
+
+    <script>
+      const defaultServerAddress = "http://localhost:5000";
+
+      function getServerAddress() {
+        return (
+          document.getElementById("serverAddress").value.trim() ||
+          defaultServerAddress
+        );
+      }
+
+      function pingServer() {
+        const serverAddress = getServerAddress();
+        fetch(`${serverAddress}/hello_world`)
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById(
+              "pingMessage"
+            ).textContent = `Ping Server: ${data}`;
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById(
+              "pingMessage"
+            ).textContent = `Ping Server: Failed.`;
+          });
+      }
+
+      function addMessage(className, message) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${className}`;
+        messageDiv.textContent = message;
+        document.getElementById("chat-container").appendChild(messageDiv);
+
+        const chatContainer = document.getElementById("chat-container");
+        chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
+      }
+
+      function sendMessage() {
+        const userInput = document.getElementById("userInput").value;
+        if (!userInput.trim()) return;
+
+        addMessage("user-message", userInput);
+
+        const serverAddress = getServerAddress();
+
+        fetch(`${serverAddress}/get-response`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userInput }),
+          credentials: "include",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            addMessage("bot-message", data.response);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            addMessage("bot-message", "An error occurred.");
+          });
+
+        document.getElementById("userInput").value = "";
+      }
+
+      document
+        .getElementById("pingServerBtn")
+        .addEventListener("click", pingServer);
+      document.getElementById("sendBtn").addEventListener("click", sendMessage);
+    </script>
+  </body>
+</html>
